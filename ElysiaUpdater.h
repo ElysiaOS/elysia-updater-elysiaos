@@ -22,6 +22,8 @@
 #include <QtCore/QDebug>
 #include <QResizeEvent>
 
+#include "translations.h"
+
 class ElysiaUpdater : public QWidget
 {
     Q_OBJECT

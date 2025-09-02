@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>/home/matsuko/Elysia/Scripts/PACKAGES/elysia-updater/resources/icon.png</file>
+    </qresource>
+</RCC>

@@ -30,7 +30,10 @@ ElysiaUpdater::~ElysiaUpdater()
 
 void ElysiaUpdater::setupUI()
 {
-    setWindowTitle("Elysia Updater");
+    // Get translations instance
+    Translations& tr = Translations::instance();
+    
+    setWindowTitle(tr.get("window_title"));
     setFixedSize(1280, 720);
     setStyleSheet("background: transparent;");
     // Background label
@@ -80,7 +83,7 @@ void ElysiaUpdater::setupUI()
     QString iconPath = QDir(assetsPath).filePath("quest.png");
     QPixmap iconPixmap(iconPath);
     icon->setPixmap(iconPixmap.scaled(54, 54, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    QLabel *text = new QLabel("Info");
+    QLabel *text = new QLabel(tr.get("info"));
     text->setStyleSheet("color: white; font-size: 16px; font-weight: bold;");
     infoLayout->addWidget(icon);
     infoLayout->addWidget(text);
@@ -89,11 +92,11 @@ void ElysiaUpdater::setupUI()
     bottomRow->addStretch();
     // Buttons - Create and add checkElysiaBtn before checkYayBtn
     // --- Add the new button ---
-    checkElysiaBtn = new QPushButton("CHECK ELYSIAOS UPDATES"); 
+    checkElysiaBtn = new QPushButton(tr.get("check_elysia_updates")); 
     // -------------------------
-    checkYayBtn = new QPushButton("CHECK YAY UPDATES");
-    checkBtn = new QPushButton("CHECK FOR UPDATES");
-    cancelBtn = new QPushButton("CLOSE");
+    checkYayBtn = new QPushButton(tr.get("check_yay_updates"));
+    checkBtn = new QPushButton(tr.get("check_updates"));
+    cancelBtn = new QPushButton(tr.get("close"));
     // Apply styles and sizes to all buttons
     for (QPushButton *btn : {checkElysiaBtn, checkYayBtn, checkBtn, cancelBtn}) { // Include new button
         btn->setCursor(Qt::PointingHandCursor);
@@ -254,7 +257,10 @@ void ElysiaUpdater::checkUpdates()
     disableButtons();
     clearScrollLayout();
     output->clear();
-    output->setText("🔃 Syncing before checking for updates...");
+    
+    // Get translations
+    Translations& tr = Translations::instance();
+    output->setText(tr.get("checking_updates"));
     syncCallback = [this]() {
         QTimer::singleShot(500, this, &ElysiaUpdater::fetchUpdates);
     };
@@ -269,7 +275,10 @@ void ElysiaUpdater::checkYayUpdates()
     disableButtons();
     clearScrollLayout();
     output->clear();
-    output->setText("🔃 Checking for AUR (yay) updates...\n");
+    
+    // Get translations
+    Translations& tr = Translations::instance();
+    output->setText(tr.get("checking_yay_updates"));
     QProcess yayProcess;
     yayProcess.start("yay", QStringList() << "-Qmu");
     yayProcess.waitForFinished();
@@ -284,7 +293,7 @@ void ElysiaUpdater::checkYayUpdates()
         }
     }
     if (validLines.isEmpty()) {
-        output->setText("✅ All AUR packages are up to date.");
+        output->setText(tr.get("aur_up_to_date"));
         enableButtons();
         return;
     }
@@ -295,17 +304,18 @@ void ElysiaUpdater::checkYayUpdates()
             updates.append(parts.first());
         }
     }
-    output->setText(QString("🌟 %1 AUR updates found:\n").arg(updates.size()));
+    output->setText(tr.get("aur_updates_found").arg(updates.size()));
     scrollLayout->setSpacing(10);
     for (const QString &pkg : updates) {
         QWidget *rowWidget = new QWidget();
         QHBoxLayout *rowLayout = new QHBoxLayout(rowWidget);
         QLabel *label = new QLabel(pkg);
         label->setStyleSheet("color: white; font-size: 20px;");
-        QPushButton *btn = new QPushButton(QString("Update Only %1").arg(pkg));
+        QPushButton *btn = new QPushButton(tr.get("update_only").arg(pkg));
         btn->setStyleSheet(fancyButtonStyle(btn));
         connect(btn, &QPushButton::clicked, this, [this, pkg]() {
-            enterUpdateMode(QString("⏳ Updating AUR package %1...\n").arg(pkg));
+            Translations& tr = Translations::instance();
+            enterUpdateMode(tr.get("updating_aur_package").arg(pkg));
             runUpdate(QStringList() << "yay" << "-S" << "--noconfirm" << pkg);
         });
         rowLayout->addWidget(label);
@@ -314,7 +324,7 @@ void ElysiaUpdater::checkYayUpdates()
         scrollLayout->addWidget(rowWidget);
         updateButtons.append(btn);
     }
-    QPushButton *updateAllBtn = new QPushButton("Update All AUR");
+    QPushButton *updateAllBtn = new QPushButton(tr.get("update_all_aur"));
     updateAllBtn->setStyleSheet(fancyButtonStyle(updateAllBtn));
     updateAllBtn->setFixedHeight(40);
     connect(updateAllBtn, &QPushButton::clicked, this, &ElysiaUpdater::updateAllYay);
@@ -334,7 +344,10 @@ void ElysiaUpdater::checkElysiaUpdates()
     clearScrollLayout(); // Clear any previous update lists if shown
     scrollArea->hide();  // Hide the scroll area used by other checks
     output->clear();
-    output->setText("🔄 Checking for ElysiaOS updates using git-elyos.sh...\n");
+    
+    // Get translations
+    Translations& tr = Translations::instance();
+    output->setText(tr.get("checking_elysia_updates"));
 
     // Ensure the process is clean
     if (process) {
@@ -355,7 +368,8 @@ void ElysiaUpdater::checkElysiaUpdates()
             this, [this](int exitCode, QProcess::ExitStatus exitStatus) {
                 Q_UNUSED(exitCode)
                 Q_UNUSED(exitStatus)
-                output->append("\n✅ ElysiaOS update check finished.\nReturning to menu...");
+                Translations& tr = Translations::instance();
+                output->append("\n" + tr.get("elysia_update_finished") + "\n");
                 // Use a timer to ensure the final message is seen before resetting
                 QTimer::singleShot(2000, this, [this]() {
                     resetToMainMenu(); // This will re-enable buttons
@@ -385,7 +399,9 @@ void ElysiaUpdater::checkElysiaUpdates()
 
 void ElysiaUpdater::syncDatabase(std::function<void()> callback)
 {
-    output->append("🔃 Syncing package database...\n");
+    // Get translations
+    Translations& tr = Translations::instance();
+    output->append(tr.get("syncing_database") + "\n");
     if (process) {
         process->kill();
         process->deleteLater();
@@ -422,7 +438,9 @@ void ElysiaUpdater::fetchUpdates()
     QString result = checkProcess.readAllStandardOutput();
     QStringList lines = result.trimmed().split('\n');
     if (lines.isEmpty() || (lines.size() == 1 && lines.first().isEmpty())) {
-        output->setText("✅ System is up to date.");
+        // Get translations
+        Translations& tr = Translations::instance();
+        output->setText(tr.get("system_up_to_date"));
         enableButtons();
         return;
     }
@@ -433,17 +451,21 @@ void ElysiaUpdater::fetchUpdates()
             updates.append(parts.first());
         }
     }
-    output->setText(QString("🔧 %1 updates found:\n").arg(updates.size()));
+    
+    // Get translations
+    Translations& tr = Translations::instance();
+    output->setText(tr.get("updates_found").arg(updates.size()));
     scrollLayout->setSpacing(10);
     for (const QString &pkg : updates) {
         QWidget *rowWidget = new QWidget();
         QHBoxLayout *rowLayout = new QHBoxLayout(rowWidget);
         QLabel *label = new QLabel(pkg);
         label->setStyleSheet("color: white; font-size: 20px;");
-        QPushButton *btn = new QPushButton(QString("Update Only %1").arg(pkg));
+        QPushButton *btn = new QPushButton(tr.get("update_only").arg(pkg));
         btn->setStyleSheet(fancyButtonStyle(btn));
         connect(btn, &QPushButton::clicked, this, [this, pkg]() {
-            enterUpdateMode(QString("⏳ Updating %1...\n").arg(pkg));
+            Translations& tr = Translations::instance();
+            enterUpdateMode(tr.get("updating_package").arg(pkg));
             syncDatabase([this, pkg]() {
                 runUpdate(QStringList() << "pkexec" << "pacman" << "-S" << "--noconfirm" << pkg);
             });
@@ -454,7 +476,7 @@ void ElysiaUpdater::fetchUpdates()
         scrollLayout->addWidget(rowWidget);
         updateButtons.append(btn);
     }
-    QPushButton *updateAllBtn = new QPushButton("Update All");
+    QPushButton *updateAllBtn = new QPushButton(tr.get("update_all"));
     updateAllBtn->setStyleSheet(fancyButtonStyle(updateAllBtn));
     updateAllBtn->setFixedHeight(40);
     connect(updateAllBtn, &QPushButton::clicked, this, &ElysiaUpdater::updateAll);
@@ -476,13 +498,17 @@ void ElysiaUpdater::updatePackageYay()
 
 void ElysiaUpdater::updateAll()
 {
-    enterUpdateMode("⏳ Updating all packages...\n");
+    // Get translations
+    Translations& tr = Translations::instance();
+    enterUpdateMode(tr.get("updating_all"));
     runUpdate(QStringList() << "pkexec" << "pacman" << "-Syu" << "--noconfirm");
 }
 
 void ElysiaUpdater::updateAllYay()
 {
-    enterUpdateMode("⏳ Updating all AUR packages...\n");
+    // Get translations
+    Translations& tr = Translations::instance();
+    enterUpdateMode(tr.get("updating_all_aur"));
     runUpdate(QStringList() << "yay" << "-Sua" << "--noconfirm");
 }
 
@@ -526,7 +552,9 @@ void ElysiaUpdater::printOutput()
 
 void ElysiaUpdater::updateFinished()
 {
-    output->append("\n✅ Update finished!\nReturning to menu...");
+    // Get translations
+    Translations& tr = Translations::instance();
+    output->append("\n" + tr.get("update_finished"));
     exitUpdateMode();
     QTimer::singleShot(2000, this, &ElysiaUpdater::resetToMainMenu);
 }

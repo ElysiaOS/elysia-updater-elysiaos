@@ -16,10 +16,12 @@ set(CMAKE_AUTORCC ON)
 set(SOURCES
     main.cpp
     ElysiaUpdater.cpp
+    translations.cpp
 )
 
 set(HEADERS
     ElysiaUpdater.h
+    translations.h
 )
 
 # Create executable

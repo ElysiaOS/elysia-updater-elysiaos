@@ -11,7 +11,7 @@ BRANCH="main"
 REPO_URL="https://github.com/$REPO_USER/$REPO_NAME.git"
 
 # Folders to sync
-FOLDERS=("bin" ".config" ".local" ".zshrc")
+FOLDERS=("bin" ".config" ".local" ".icons" ".zshrc")
 
 # Temporary clone directory
 TMP_DIR="$LOCAL_DIR/.cache/elysiaos_tmp"
